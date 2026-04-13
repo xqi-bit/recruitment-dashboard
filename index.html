@@ -267,7 +267,7 @@ const cache = {};
 
 async function fetchSheet(sheetName) {
   if (cache[sheetName]) return cache[sheetName];
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&nocache=${Date.now()}`;
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
   const res = await fetch(proxyUrl);
   if (!res.ok) throw new Error(`Could not load sheet: ${sheetName}`);
