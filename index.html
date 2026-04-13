@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>China Hiring Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede8;
+    --text: #1a1a18; --text2: #666660; --text3: #999994;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.2);
+    --blue-bg: #e6f1fb; --blue: #185fa5; --blue-dark: #042c53;
+    --green-bg: #eaf3de; --green: #3b6d11; --green-dark: #173404;
+    --amber-bg: #faeeda; --amber: #854f0b; --amber-dark: #412402;
+    --red-bg: #fcebeb; --red: #a32d2d; --red-dark: #501313;
+    --purple-bg: #eeedfe; --purple: #3c3489;
+    --gray-bg: #f1efe8; --gray: #5f5e5a;
+    --radius: 8px; --radius-lg: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { background: var(--bg2); color: var(--text); min-height: 100vh; }
+  header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 16px; font-weight: 500; }
+  .last-updated { font-size: 12px; color: var(--text3); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 24px; }
+
+  /* Role tabs */
+  .role-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .role-tab { padding: 7px 16px; border-radius: 100px; border: 0.5px solid var(--border2); font-size: 13px; cursor: pointer; background: var(--bg); color: var(--text2); transition: all .15s; white-space: nowrap; }
+  .role-tab:hover { background: var(--bg3); }
+  .role-tab.active { background: var(--blue-dark); color: #fff; border-color: var(--blue-dark); }
+
+  /* Role header */
+  .role-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .role-title { font-size: 17px; font-weight: 500; }
+  .role-meta { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .days-badge { background: var(--amber-bg); color: var(--amber-dark); border-radius: var(--radius); padding: 8px 14px; text-align: right; }
+  .days-num { font-size: 24px; font-weight: 500; display: block; line-height: 1; }
+  .days-label { font-size: 11px; color: var(--amber); }
+
+  /* Metric cards */
+  .metrics { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-bottom: 16px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; border: 0.5px solid transparent; transition: border-color .15s; }
+  .metric:hover { border-color: var(--border2); }
+  .metric-val { font-size: 24px; font-weight: 500; line-height: 1; }
+  .metric-label { font-size: 12px; color: var(--text2); margin-top: 5px; }
+  .metric-hint { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* Weekly section */
+  .week-section { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px; }
+  .week-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .week-head label { font-size: 13px; font-weight: 500; }
+  .week-select { font-size: 13px; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 5px 10px; background: var(--bg2); color: var(--text); cursor: pointer; }
+  .week-stats { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
+  .wstat { background: var(--bg2); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; border: 0.5px solid transparent; transition: border-color .15s; }
+  .wstat:hover { border-color: var(--border2); }
+  .wstat-val { font-size: 20px; font-weight: 500; }
+  .wstat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .wstat-hint { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* Two column layout */
+  .row2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; }
+  .card-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+
+  /* Funnel */
+  .funnel-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; border-radius: 4px; }
+  .funnel-row:hover { opacity: .75; }
+  .funnel-label { font-size: 12px; color: var(--text2); width: 150px; flex-shrink: 0; text-align: right; }
+  .funnel-track { flex: 1; background: var(--bg2); border-radius: 3px; height: 22px; }
+  .funnel-bar { height: 22px; border-radius: 3px; display: flex; align-items: center; }
+  .funnel-num { font-size: 12px; font-weight: 500; padding-left: 8px; white-space: nowrap; }
+  .funnel-pct { font-size: 11px; color: var(--text3); width: 32px; text-align: right; flex-shrink: 0; }
+
+  /* Channel rows */
+  .ch-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; }
+  .ch-row:last-child { border-bottom: none; }
+  .ch-row:hover { opacity: .75; }
+  .ch-left { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .ch-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .ch-right { display: flex; align-items: center; gap: 8px; }
+  .ch-count { font-size: 13px; font-weight: 500; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; white-space: nowrap; }
+  .badge-green { background: var(--green-bg); color: var(--green-dark); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-dark); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue-dark); }
+  .badge-gray { background: var(--gray-bg); color: var(--gray); }
+  .badge-red { background: var(--red-bg); color: var(--red-dark); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+
+  /* Reject reasons */
+  .reject-item { font-size: 12px; color: var(--text2); line-height: 2; cursor: pointer; }
+  .reject-item:hover b { text-decoration: underline; }
+
+  /* Pipeline */
+  .pipeline-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+  .pipe-card { border-radius: var(--radius); padding: 10px 14px; cursor: pointer; }
+  .pipe-card:hover { opacity: .85; }
+  .pipe-stage { font-size: 11px; margin-bottom: 4px; }
+  .pipe-name { font-size: 14px; font-weight: 500; line-height: 1.3; }
+  .pipe-src { font-size: 11px; margin-top: 3px; }
+
+  /* Modal */
+  .modal-overlay { display: none; background: rgba(0,0,0,.25); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+  .modal-overlay.open { display: block; }
+  .modal-box { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border2); padding: 16px 20px; max-height: 400px; overflow-y: auto; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .modal-title { font-size: 14px; font-weight: 500; }
+  .modal-close { font-size: 20px; color: var(--text3); cursor: pointer; line-height: 1; padding: 0 6px; border-radius: 4px; }
+  .modal-close:hover { background: var(--bg2); }
+  table.ctbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .ctbl th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text2); padding: 5px 8px; border-bottom: 0.5px solid var(--border); letter-spacing: .04em; text-transform: uppercase; }
+  .ctbl td { padding: 6px 8px; border-bottom: 0.5px solid var(--border); vertical-align: top; word-break: break-word; }
+  .ctbl tr:last-child td { border-bottom: none; }
+  .ctbl tr:hover td { background: var(--bg2); }
+  .fail-note { font-size: 11px; color: var(--text3); }
+  .remark-note { font-size: 11px; color: var(--blue); }
+
+  /* Loading / error */
+  .loading { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 14px; }
+  .error-box { background: var(--red-bg); color: var(--red-dark); border-radius: var(--radius); padding: 14px 18px; font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+
+  @media (max-width: 700px) {
+    .metrics { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .week-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .row2 { grid-template-columns: 1fr; }
+    .pipeline-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>China Hiring Dashboard</h1>
+  <span class="last-updated" id="last-updated">Loading...</span>
+</header>
+
+<div class="container">
+  <div id="main-content"><div class="loading">Loading data from Google Sheets...</div></div>
+</div>
+
+<script>
+// ─── CONFIG — EDIT THESE ───────────────────────────────────────────────────
+const SHEET_ID = '14LP1PN2S7CfVbeRjt54mJBwVVxUF_hzk';
+
+const ROLES = [
+  {
+    key: 'PD',
+    label: 'Sr/Principal Product Builder',
+    sheetName: 'PD Candidates List',
+    hm: 'Jose Jesus',
+    openDate: '2026-03-03',
+  },
+  {
+    key: 'BE',
+    label: 'Software Engineer II, Backend',
+    sheetName: 'Backend Candidates List',
+    hm: 'Clay Xu',
+    openDate: '2026-02-01',
+  },
+  {
+    key: 'FS',
+    label: 'Fullstack Engineer',
+    sheetName: 'Full-Stack Candidates List',
+    hm: 'Clay Xu',
+    openDate: '2026-02-01',
+  },
+  {
+    key: 'OLAP',
+    label: 'Software Engineer II, OLAP',
+    sheetName: 'OLAP Candidates List',
+    hm: 'Franklin Xie',
+    openDate: '2025-09-11',
+  },
+];
+
+// Column mapping — matches your sheet headers exactly
+const COL = {
+  date:         'Review time period',
+  position:     'Open Position',
+  name:         'Candidate Name',
+  company:      'Current Company/School',
+  level:        'Level',
+  experience:   'Year of Experience',
+  title:        'Current Title',
+  stage:        'Current Stage',
+  status:       'Current Status',
+  sourceType:   'Sourcing Type',      // Active Sourcing / Passive Sourcing
+  channel:      'Source Channel',     // Boss / LinkedIn / RED / Referral etc.
+  failReason:   'Failed Reasons',
+  remark:       'Remark',
+};
+// ─── END CONFIG ────────────────────────────────────────────────────────────
+
+// Status normalisation
+function normStatus(s) {
+  if (!s) return 'Active Sourcing';
+  const l = s.toLowerCase().trim();
+  if (l.includes('reference check')) return 'Reference Check';
+  if (l.includes('2nd round') || l.includes('second round')) return '2nd Round Interview';
+  if (l.includes('1st') || l.includes('first')) return '1st Round Interview';
+  if (l.includes('cv sent') || l.includes('cv review') || l.includes('hm review')) return 'CV Sent to HM';
+  if (l.includes('offer')) return 'Offer';
+  if (l.includes('hired') || l.includes('onboard')) return 'Hired';
+  if (l.includes('phone screen') || l.includes('phone screening')) return 'Phone Screen Passed';
+  if (l.includes('recruiter screen') || l.includes('recruiter phone')) return 'Recruiter Screened';
+  if (l.includes('checking') || l.includes('re-engag')) return 'Re-engaging';
+  if (l.includes('active sourcing')) return 'Active Sourcing';
+  if (l.includes('passive sourcing')) return 'Passive Sourcing';
+  return s.trim();
+}
+
+function normChannel(row) {
+  const ch = (row[COL.channel] || '').toString().trim();
+  const type = (row[COL.sourceType] || '').toString().toLowerCase();
+  if (!ch && type.includes('passive')) return 'LinkedIn';
+  if (!ch) return 'Boss 直聘';
+  const l = ch.toLowerCase();
+  if (l.includes('red') || l.includes('小红书') || l.includes('xiaohongshu')) return 'Xiaohongshu';
+  if (l.includes('linkedin')) return 'LinkedIn';
+  if (l.includes('referral') || l.includes('内推')) return 'Referral';
+  if (l.includes('boss') || l.includes('直聘')) return 'Boss 直聘';
+  if (l.includes('github')) return 'GitHub';
+  return ch;
+}
+
+function getWeekLabel(dateStr) {
+  if (!dateStr) return 'Unknown';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return 'Unknown';
+  const day = d.getDay();
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function daysOpen(openDate) {
+  const d = new Date(openDate);
+  const now = new Date();
+  return Math.round((now - d) / 86400000);
+}
+
+// Status badge colours
+const SB = {
+  'Reference Check':    ['#EAF3DE','#173404'],
+  'Offer':              ['#EAF3DE','#173404'],
+  'Hired':              ['#EAF3DE','#173404'],
+  'CV Sent to HM':      ['#E6F1FB','#042C53'],
+  '2nd Round Interview':['#E6F1FB','#042C53'],
+  '1st Round Interview':['#EEEDFE','#26215C'],
+  'Phone Screen Passed':['#EEEDFE','#26215C'],
+  'Re-engaging':        ['#FAEEDA','#412402'],
+  'Passive Sourcing':   ['#F1EFE8','#2C2C2A'],
+  'Recruiter Screened': ['#F1EFE8','#2C2C2A'],
+  'Active Sourcing':    ['#EAF3DE','#173404'],
+};
+function sBadge(s) {
+  const [bg, fg] = SB[s] || ['#F1EFE8','#2C2C2A'];
+  return `<span style="background:${bg};color:${fg};padding:2px 7px;border-radius:100px;font-size:11px;white-space:nowrap;">${s}</span>`;
+}
+
+// ─── DATA CACHE ────────────────────────────────────────────────────────────
+const cache = {};
+
+async function fetchSheet(sheetName) {
+  if (cache[sheetName]) return cache[sheetName];
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Could not load sheet: ${sheetName}`);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  cache[sheetName] = rows;
+  return rows;
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || '').trim(); });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+function parseCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === ',' && !inQ) { result.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+let activeRole = ROLES[0].key;
+let activeWeek = 'all';
+let currentData = [];
+
+function renderAll(candidates, role) {
+  currentData = candidates;
+
+  // Compute weeks
+  const weekMap = {};
+  candidates.forEach(c => {
+    const w = getWeekLabel(c[COL.date]);
+    if (w === 'Unknown') return;
+    if (!weekMap[w]) weekMap[w] = {total:0, screened:0, phone:0, advanced:0, reengaging:0};
+    weekMap[w].total++;
+    const st = normStatus(c[COL.status]);
+    if (st === 'Recruiter Screened') weekMap[w].screened++;
+    else if (st === 'Phone Screen Passed') weekMap[w].phone++;
+    else if (['CV Sent to HM','2nd Round Interview','1st Round Interview','Reference Check','Offer','Hired'].includes(st)) weekMap[w].advanced++;
+    else if (st === 'Re-engaging') weekMap[w].reengaging++;
+  });
+  const sortedWeeks = Object.keys(weekMap).sort((a,b) => new Date(a+' 2026') - new Date(b+' 2026'));
+
+  // Filter by active week
+  const viewData = activeWeek === 'all' ? candidates : candidates.filter(c => getWeekLabel(c[COL.date]) === activeWeek);
+
+  // Compute stats for view
+  const total = viewData.length;
+  const screened = viewData.filter(c => normStatus(c[COL.status]) === 'Recruiter Screened').length;
+  const phone = viewData.filter(c => normStatus(c[COL.status]) === 'Phone Screen Passed').length;
+  const advanced = viewData.filter(c => ['CV Sent to HM','2nd Round Interview','1st Round Interview','Reference Check','Offer','Hired'].includes(normStatus(c[COL.status]))).length;
+  const live = viewData.filter(c => ['Reference Check','CV Sent to HM','2nd Round Interview','Offer'].includes(normStatus(c[COL.status]))).length;
+
+  // Channel breakdown (all data always)
+  const chanCount = {};
+  candidates.forEach(c => {
+    const ch = normChannel(c);
+    chanCount[ch] = (chanCount[ch]||0) + 1;
+  });
+
+  // Rejection reasons (all data)
+  const failCount = {};
+  candidates.forEach(c => {
+    const f = (c[COL.failReason]||'').trim();
+    if (f) failCount[f] = (failCount[f]||0) + 1;
+  });
+  const topFails = Object.entries(failCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // Live pipeline candidates
+  const liveCands = candidates.filter(c => ['Reference Check','CV Sent to HM','2nd Round Interview','1st Round Interview','Offer','Hired'].includes(normStatus(c[COL.status])));
+
+  const days = daysOpen(role.openDate);
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="role-header">
+      <div>
+        <div class="role-title">${role.label}</div>
+        <div class="role-meta">HM: ${role.hm} &nbsp;·&nbsp; Open: ${role.openDate} &nbsp;·&nbsp; Status: <span style="color:#E24B4A;font-weight:500;">Open</span></div>
+      </div>
+      <div class="days-badge">
+        <span class="days-num">${days}</span>
+        <span class="days-label">days open</span>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric" onclick="showGroup('all')"><div class="metric-val">${candidates.length}</div><div class="metric-label">Total sourced</div><div class="metric-hint">Click to see all →</div></div>
+      <div class="metric" onclick="showGroup('screened')"><div class="metric-val">${candidates.filter(c=>normStatus(c[COL.status])==='Recruiter Screened').length}</div><div class="metric-label">Recruiter screened</div><div class="metric-hint">Click to see list →</div></div>
+      <div class="metric" onclick="showGroup('phone')"><div class="metric-val">${candidates.filter(c=>normStatus(c[COL.status])==='Phone Screen Passed').length}</div><div class="metric-label">Phone screen passed</div><div class="metric-hint">Click to see list →</div></div>
+      <div class="metric" onclick="showGroup('advanced')"><div class="metric-val">${candidates.filter(c=>['CV Sent to HM','2nd Round Interview','1st Round Interview','Reference Check','Offer','Hired'].includes(normStatus(c[COL.status]))).length}</div><div class="metric-label">Advanced to HM</div><div class="metric-hint">Click to see list →</div></div>
+      <div class="metric" onclick="showGroup('live')"><div class="metric-val" style="color:#3b6d11;">${liveCands.length}</div><div class="metric-label">Live in pipeline</div><div class="metric-hint">Click to see list →</div></div>
+    </div>
+
+    <div id="modal-area" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div class="modal-title" id="modal-title">Candidates</div>
+          <div class="modal-close" onclick="closeModal()">×</div>
+        </div>
+        <table class="ctbl">
+          <thead><tr>
+            <th style="width:120px;">Name</th>
+            <th style="width:90px;">Company</th>
+            <th style="width:145px;">Status</th>
+            <th style="width:90px;">Channel</th>
+            <th style="width:60px;">Date</th>
+            <th>Notes</th>
+          </tr></thead>
+          <tbody id="modal-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="week-section">
+      <div class="week-head">
+        <label>Weekly breakdown</label>
+        <select class="week-select" id="week-select" onchange="onWeekChange(this.value)">
+          <option value="all">All weeks (cumulative)</option>
+          ${sortedWeeks.map(w=>`<option value="${w}" ${activeWeek===w?'selected':''}>${w}</option>`).join('')}
+        </select>
+      </div>
+      <div class="week-stats">
+        <div class="wstat" onclick="weekClick('total')"><div class="wstat-val">${total}</div><div class="wstat-label">Candidates added</div><div class="wstat-hint">Click →</div></div>
+        <div class="wstat" onclick="weekClick('screened')"><div class="wstat-val">${screened}</div><div class="wstat-label">Screened</div><div class="wstat-hint">Click →</div></div>
+        <div class="wstat" onclick="weekClick('phone')"><div class="wstat-val">${phone}</div><div class="wstat-label">Phone screen passed</div><div class="wstat-hint">Click →</div></div>
+        <div class="wstat" onclick="weekClick('advanced')"><div class="wstat-val">${advanced}</div><div class="wstat-label">Advanced to HM</div><div class="wstat-hint">Click →</div></div>
+        <div class="wstat" onclick="weekClick('reengaging')"><div class="wstat-val">${viewData.filter(c=>normStatus(c[COL.status])==='Re-engaging').length}</div><div class="wstat-label">Re-engaging</div><div class="wstat-hint">Click →</div></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">Pipeline funnel — click any row</div>
+        ${funnelRow('Active sourcing', candidates.filter(c=>normStatus(c[COL.status])==='Active Sourcing').length, candidates.length, '#B5D4F4','#0C447C','sourcing')}
+        ${funnelRow('Re-engaging', candidates.filter(c=>normStatus(c[COL.status])==='Re-engaging').length, candidates.length, '#EF9F27','#412402','reengaging')}
+        ${funnelRow('Recruiter screened', candidates.filter(c=>normStatus(c[COL.status])==='Recruiter Screened').length, candidates.length, '#85B7EB','#0C447C','screened')}
+        ${funnelRow('Phone screen passed', candidates.filter(c=>normStatus(c[COL.status])==='Phone Screen Passed').length, candidates.length, '#378ADD','#042C53','phone')}
+        ${funnelRow('CV sent / interview', candidates.filter(c=>['CV Sent to HM','2nd Round Interview','1st Round Interview'].includes(normStatus(c[COL.status]))).length, candidates.length, '#185FA5','#ffffff','advanced')}
+        ${funnelRow('Ref. check / offer', candidates.filter(c=>['Reference Check','Offer','Hired'].includes(normStatus(c[COL.status]))).length, candidates.length, '#27500A','#ffffff','live')}
+      </div>
+      <div class="card">
+        <div class="card-title">Channel breakdown — click any row</div>
+        ${Object.entries(chanCount).sort((a,b)=>b[1]-a[1]).map(([ch,n])=>`
+          <div class="ch-row" onclick="showChannel('${ch}')">
+            <div class="ch-left"><div class="ch-dot" style="background:${chColor(ch)};"></div>${ch}</div>
+            <div class="ch-right"><span class="ch-count">${n}</span><span class="badge ${chBadge(ch)}">${chLabel(ch,candidates)}</span></div>
+          </div>`).join('')}
+        <div style="margin-top:14px;background:var(--bg2);border-radius:var(--radius);padding:10px 12px;">
+          <div style="font-size:12px;font-weight:500;margin-bottom:6px;">Top rejection reasons</div>
+          ${topFails.map(([f,n])=>`<div class="reject-item" onclick="showFail('${f.replace(/'/g,"\\'")}')"><b>${n}</b> — ${f} ↗</div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Live pipeline</div>
+      <div class="pipeline-grid">
+        ${liveCands.length === 0
+          ? '<div style="font-size:13px;color:var(--text2);padding:8px 0;grid-column:1/-1;">No candidates currently in active pipeline.</div>'
+          : liveCands.map(c => {
+              const st = normStatus(c[COL.status]);
+              const [bg,fg] = SB[st] || ['#F1EFE8','#2C2C2A'];
+              const bg2 = bg; const fg2 = fg;
+              return `<div class="pipe-card" style="background:${bg2};" onclick="showGroup('live')">
+                <div class="pipe-stage" style="color:${fg2};">${st}</div>
+                <div class="pipe-name" style="color:${fg2};">${c[COL.name]||'—'}</div>
+                <div class="pipe-src" style="color:${fg2};">${normChannel(c)} · ${c[COL.company]||''}</div>
+              </div>`;
+            }).join('')
+        }
+      </div>
+    </div>
+  `;
+}
+
+function funnelRow(label, count, total, color, textColor, group) {
+  const pct = total > 0 ? Math.round(count/total*100) : 0;
+  const w = Math.max(pct, count > 0 ? 2 : 0);
+  const showInside = w > 15;
+  return `<div class="funnel-row" onclick="showGroup('${group}')">
+    <div class="funnel-label">${label}</div>
+    <div class="funnel-track">
+      <div class="funnel-bar" style="width:${w}%;background:${color};">
+        ${showInside ? `<span class="funnel-num" style="color:${textColor};">${count}</span>` : ''}
+      </div>
+    </div>
+    ${!showInside ? `<span style="font-size:12px;font-weight:500;color:var(--text2);min-width:20px;">${count}</span>` : ''}
+    <div class="funnel-pct">${pct}%</div>
+  </div>`;
+}
+
+function chColor(ch) {
+  const map = {'Boss 直聘':'#378ADD','LinkedIn':'#7F77DD','Xiaohongshu':'#D4537E','Referral':'#1D9E75','GitHub':'#5F5E5A'};
+  return map[ch] || '#888780';
+}
+function chBadge(ch) {
+  const map = {'Xiaohongshu':'badge-green','LinkedIn':'badge-gray','Referral':'badge-green','Boss 直聘':'badge-amber'};
+  return map[ch] || 'badge-gray';
+}
+function chLabel(ch, data) {
+  const results = data.filter(c => normChannel(c)===ch && ['Reference Check','CV Sent to HM','2nd Round Interview','Offer','Hired'].includes(normStatus(c[COL.status]))).length;
+  if (results > 0) return `${results} advanced`;
+  return ch === 'Xiaohongshu' ? 'Best results' : ch === 'LinkedIn' ? 'Active outreach' : 'Sourcing';
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function renderTable(data, title) {
+  document.getElementById('modal-title').textContent = `${title} (${data.length})`;
+  document.getElementById('modal-body').innerHTML = data.map(c => `
+    <tr>
+      <td style="font-weight:500;">${c[COL.name]||'—'}</td>
+      <td style="font-size:12px;color:var(--text2);">${c[COL.company]||''}</td>
+      <td>${sBadge(normStatus(c[COL.status]))}</td>
+      <td style="font-size:12px;color:var(--text2);">${normChannel(c)}</td>
+      <td style="font-size:12px;color:var(--text3);">${c[COL.date]||''}</td>
+      <td>${c[COL.failReason]?`<span class="fail-note">${c[COL.failReason]}</span>`:''}${c[COL.remark]?`<span class="remark-note"> ${c[COL.remark]}</span>`:''}</td>
+    </tr>`).join('');
+  const m = document.getElementById('modal-area');
+  m.classList.add('open');
+  m.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function showGroup(group) {
+  const src = activeWeek === 'all' ? currentData : currentData.filter(c => getWeekLabel(c[COL.date]) === activeWeek);
+  const map = {
+    all:        [currentData, 'All candidates'],
+    screened:   [src.filter(c=>normStatus(c[COL.status])==='Recruiter Screened'), 'Recruiter screened'],
+    phone:      [src.filter(c=>normStatus(c[COL.status])==='Phone Screen Passed'), 'Phone screen passed'],
+    advanced:   [src.filter(c=>['CV Sent to HM','2nd Round Interview','1st Round Interview'].includes(normStatus(c[COL.status]))), 'Advanced to HM'],
+    live:       [currentData.filter(c=>['Reference Check','CV Sent to HM','2nd Round Interview','Offer','Hired'].includes(normStatus(c[COL.status]))), 'Live pipeline'],
+    sourcing:   [src.filter(c=>normStatus(c[COL.status])==='Active Sourcing'), 'Active sourcing'],
+    reengaging: [src.filter(c=>normStatus(c[COL.status])==='Re-engaging'), 'Re-engaging'],
+    total:      [src, activeWeek === 'all' ? 'All candidates' : `Week of ${activeWeek}`],
+  };
+  const [data, title] = map[group] || [currentData, 'Candidates'];
+  renderTable(data, title);
+}
+
+function showChannel(ch) {
+  renderTable(currentData.filter(c => normChannel(c) === ch), ch + ' candidates');
+}
+function showFail(reason) {
+  renderTable(currentData.filter(c => (c[COL.failReason]||'').trim() === reason), 'Rejected: ' + reason);
+}
+function closeModal() {
+  document.getElementById('modal-area').classList.remove('open');
+}
+function weekClick(field) {
+  showGroup(field);
+}
+function onWeekChange(val) {
+  activeWeek = val;
+  loadRole(activeRole);
+}
+
+// ─── ROLE SWITCHING ────────────────────────────────────────────────────────
+function buildTabs() {
+  const tabsHtml = ROLES.map(r =>
+    `<div class="role-tab ${r.key===activeRole?'active':''}" onclick="switchRole('${r.key}')">${r.label}</div>`
+  ).join('');
+  document.getElementById('role-tabs').innerHTML = tabsHtml;
+}
+
+function switchRole(key) {
+  activeRole = key;
+  activeWeek = 'all';
+  buildTabs();
+  loadRole(key);
+}
+
+async function loadRole(key) {
+  const role = ROLES.find(r => r.key === key);
+  if (!role) return;
+  document.getElementById('main-content').innerHTML = `<div class="loading">Loading ${role.label}...</div>`;
+  try {
+    const data = await fetchSheet(role.sheetName);
+    document.getElementById('last-updated').textContent = 'Updated: ' + new Date().toLocaleString();
+    renderAll(data, role);
+  } catch(e) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="error-box">
+        <strong>Could not load data.</strong><br>
+        Make sure your Google Sheet is shared as "Anyone with the link can view".<br>
+        Sheet name expected: <code>${role.sheetName}</code><br>
+        Error: ${e.message}
+      </div>`;
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+document.getElementById('main-content').innerHTML = `
+  <div id="role-tabs" class="role-tabs"></div>
+  <div id="role-content"></div>
+`;
+document.getElementById('main-content').innerHTML = `
+  <div id="role-tabs" class="role-tabs"></div>
+  <div id="role-main"></div>
+`;
+
+// Re-wire main content area
+document.getElementById('main-content').outerHTML = `<div class="container" id="app"></div>`;
+
+// Simpler init
+const app = document.querySelector('.container');
+app.innerHTML = `<div id="role-tabs" class="role-tabs"></div><div id="main-content"></div>`;
+
+buildTabs();
+loadRole(activeRole);
+</script>
+</body>
+</html>
